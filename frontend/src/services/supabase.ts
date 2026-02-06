@@ -24,6 +24,7 @@ export function clearSession(): void {
   localStorage.removeItem('session_token')
   localStorage.removeItem('ref_code')
   localStorage.removeItem('attendee_id')
+  // Keep event_slug so user can return to the same event
 }
 
 // Helper: Get ref code from localStorage
@@ -34,4 +35,14 @@ export function getRefCode(): string | null {
 // Helper: Store ref code
 export function setRefCode(refCode: string): void {
   localStorage.setItem('ref_code', refCode)
+}
+
+// Helper: Get event slug from localStorage
+export function getEventSlug(): string | null {
+  return localStorage.getItem('event_slug')
+}
+
+// Helper: Store event slug
+export function setEventSlug(slug: string): void {
+  localStorage.setItem('event_slug', slug)
 }

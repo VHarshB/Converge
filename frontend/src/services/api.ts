@@ -1,7 +1,8 @@
 import axios from 'axios'
 import type { CheckinRequest, CheckinResponse, LogConversationRequest, LogConversationResponse, LeaderboardResponse } from '../../../shared/types'
 
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:5000'
+// Use Vite proxy in development, full URL in production
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const api = axios.create({
   baseURL: API_URL,

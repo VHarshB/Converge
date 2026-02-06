@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { apiClient } from '../services/api'
-import { setRefCode, setSessionToken } from '../services/supabase'
+import { setRefCode, setSessionToken, setEventSlug } from '../services/supabase'
 
 export default function CheckinPage() {
   const { eventSlug } = useParams()
@@ -34,6 +34,7 @@ export default function CheckinPage() {
       // Store session
       setRefCode(response.refCode)
       setSessionToken(response.sessionToken)
+      setEventSlug(eventSlug || 'sample-event')
 
       // Navigate to pass page
       navigate(`/e/${eventSlug}/me`)

@@ -6,10 +6,14 @@ import LogConversationPage from './pages/LogConversationPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
+import Header from './components/Header'
 
 function App() {
   return (
-    <Routes>
+    <>
+      <Header />
+      <div style={{ paddingTop: '60px' }}>
+        <Routes>
       {/* Root route - default to sample-event */}
       <Route path="/" element={<EventLanding />} />
       
@@ -23,7 +27,9 @@ function App() {
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/events/:eventId/*" element={<AdminDashboard />} />
-    </Routes>
+        </Routes>
+      </div>
+    </>
   )
 }
 

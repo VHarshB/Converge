@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useSession } from '../hooks/useSession'
 import { clearSession } from '../services/supabase'
 
 export default function MyPassPage() {
   const { refCode } = useSession()
+  const { eventSlug } = useParams()
   const navigate = useNavigate()
 
   if (!refCode) {
@@ -16,7 +17,7 @@ export default function MyPassPage() {
 
   const handleLogout = () => {
     clearSession()
-    navigate('/')
+    navigate(`/e/${eventSlug || 'sample-event'}`)
   }
 
   return (
@@ -33,12 +34,60 @@ export default function MyPassPage() {
         <h3 style={{ fontSize: '2.5rem', fontFamily: 'monospace', marginTop: '1rem' }}>{refCode}</h3>
         <p style={{ marginTop: '1rem', color: '#6b7280' }}>Share this code with others to log conversations</p>
       </div>
-      <button 
-        style={{ width: '100%', marginTop: '2rem', backgroundColor: '#6366f1', color: 'white' }}
-        onClick={handleLogout}
-      >
-        Logout
-      </button>
+      
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem' }}>
+        <button 
+          style={{ 
+            width: '100%', 
+            padding: '1rem',
+            backgroundColor: '#ec4899', 
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.5rem',
+            fontSize: '1rem',
+            fontWeight: '500',
+            cursor: 'pointer'
+          }}
+          onClick={() => navigate(`/e/${eventSlug || 'sample-event'}/log`)}
+        >
+          Log Conversation
+        </button>
+        
+        <button 
+          style={{ 
+            width: '100%', 
+            padding: '1rem',
+            backgroundColor: '#8b5cf6', 
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.5rem',
+            fontSize: '1rem',
+            fontWeight: '500',
+            cursor: 'pointer'
+          }}
+          onClick={() => navigate(`/e/${eventSlug || 'sample-event'}/leaderboard`)}
+        >
+          View Leaderboard
+        </button>
+        
+        <button 
+          style={{ 
+            width: '100%', 
+            padding: '0.75rem',
+            backgroundColor: 'transparent',
+            color: '#6b7280',
+            border: '1px solid #d1d5db',
+            borderRadius: '0.5rem',
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            marginTop: '1rem'
+          }}
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      </div>
     </div>
   )
 }
