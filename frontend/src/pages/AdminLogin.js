@@ -1,0 +1,4 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export default function AdminLogin() {
+    return (_jsxs("div", { style: { padding: '2rem', maxWidth: '400px', margin: '0 auto' }, children: [_jsx("h2", { children: "Admin Login" }), _jsxs("form", { style: { marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }, children: [_jsxs("div", { children: [_jsx("label", { children: "Email" }), _jsx("input", { type: "email", placeholder: "admin@example.com", required: true })] }), _jsxs("div", { children: [_jsx("label", { children: "Password" }), _jsx("input", { type: "password", placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022", required: true })] }), _jsx("button", { type: "submit", style: { backgroundColor: '#6366f1', color: 'white' }, children: "Sign In" })] })] }));
+}
