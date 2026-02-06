@@ -18,6 +18,7 @@ export function clearSession() {
     localStorage.removeItem('session_token');
     localStorage.removeItem('ref_code');
     localStorage.removeItem('attendee_id');
+    localStorage.removeItem('attendee_info');
 }
 // Helper: Get ref code from localStorage
 export function getRefCode() {
@@ -26,4 +27,15 @@ export function getRefCode() {
 // Helper: Store ref code
 export function setRefCode(refCode) {
     localStorage.setItem('ref_code', refCode);
+}
+
+// Helper: Store attendee info
+export function setAttendeeInfo(info) {
+    localStorage.setItem('attendee_info', JSON.stringify(info));
+}
+
+// Helper: Get attendee info
+export function getAttendeeInfo() {
+    const info = localStorage.getItem('attendee_info');
+    return info ? JSON.parse(info) : null;
 }

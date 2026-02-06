@@ -5,13 +5,20 @@ import { calculateAttendeeScore, compareTiebreaker, generateLeaderboard } from '
 
 const router = Router()
 
-// GET /api/leaderboard?eventSlug=...
+// GET /api/leaderboard?eventSlug=...&category=...
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { eventSlug, limit = 10 } = req.query
+    const { eventSlug, limit = 10, category = 'overall' } = req.query
 
     if (!eventSlug) {
       return res.status(400).json({ error: 'eventSlug is required' })
+    }
+
+    // Validate category
+    const validCategories = ['overall', 'relevance', 'weird', 'offtrack', 'quality']
+    const selectedCategory = (category as string).toLowerCase()
+    if (!validCategories.includes(selectedCategory)) {
+      return res.status(400).json({ error: 'Invalid category. Must be: overall, relevance, weird, offtrack, or quality' })
     }
 
     // Get event
@@ -69,7 +76,7 @@ router.get('/', async (req: Request, res: Response) => {
       .eq('event_id', event.id)
       .eq('is_deleted', false)
 
-    // Calculate scores for each attendee
+    // Calculate scores for each attendee based on selected category
     const scores: AttendeeScore[] = attendees.map(att => {
       const userLogs = (logs || []).filter(log => log.from_attendee_id === att.id)
 
@@ -78,7 +85,45 @@ router.get('/', async (req: Request, res: Response) => {
         log => (log.note && log.note.length >= 20) || (log.topics && log.topics.length >= 2)
       ).length
 
-      const score = calculateAttendeeScore(uniquePartners, detailBonusCount)
+      // Calculate category-specific score
+      let categoryScore = 0
+      if (selectedCategory === 'overall') {
+        // Traditional leaderboard: connections + detail bonus
+        categoryScore = calculateAttendeeScore(uniquePartners, detailBonusCount)
+      } else if (selectedCategory === 'quality') {
+        // Average of overall AI scores
+        const aiScores = userLogs
+          .filter(log => log.ai_score_overall > 0)
+          .map(log => log.ai_score_overall)
+        categoryScore = aiScores.length > 0
+          ? Math.round(aiScores.reduce((sum, s) => sum + s, 0) / aiScores.length)
+          : 0
+      } else if (selectedCategory === 'relevance') {
+        // Average relevance score
+        const relevanceScores = userLogs
+          .filter(log => log.ai_score_relevance > 0)
+          .map(log => log.ai_score_relevance)
+        categoryScore = relevanceScores.length > 0
+          ? Math.round(relevanceScores.reduce((sum, s) => sum + s, 0) / relevanceScores.length)
+          : 0
+      } else if (selectedCategory === 'weird') {
+        // Average weird score
+        const weirdScores = userLogs
+          .filter(log => log.ai_score_weird > 0)
+          .map(log => log.ai_score_weird)
+        categoryScore = weirdScores.length > 0
+          ? Math.round(weirdScores.reduce((sum, s) => sum + s, 0) / weirdScores.length)
+          : 0
+      } else if (selectedCategory === 'offtrack') {
+        // Average offtrack score
+        const offtrackScores = userLogs
+          .filter(log => log.ai_score_offtrack > 0)
+          .map(log => log.ai_score_offtrack)
+        categoryScore = offtrackScores.length > 0
+          ? Math.round(offtrackScores.reduce((sum, s) => sum + s, 0) / offtrackScores.length)
+          : 0
+      }
+
       const lastLogTime = userLogs.length > 0 ? userLogs[userLogs.length - 1].created_at : new Date().toISOString()
 
       return {
@@ -88,7 +133,7 @@ router.get('/', async (req: Request, res: Response) => {
         uniquePartners,
         validLogsCount: userLogs.length,
         detailBonusCount,
-        score,
+        score: categoryScore,
         lastLogTime,
       }
     })

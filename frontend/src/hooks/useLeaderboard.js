@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../services/api';
-export function useLeaderboard(eventSlug) {
+export function useLeaderboard(eventSlug, category = 'overall') {
     const [leaderboard, setLeaderboard] = useState([]);
     const [isLocked, setIsLocked] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -11,7 +11,7 @@ export function useLeaderboard(eventSlug) {
         const fetchLeaderboard = async () => {
             try {
                 setLoading(true);
-                const data = await apiClient.getLeaderboard(eventSlug);
+                const data = await apiClient.getLeaderboard(eventSlug, category);
                 setLeaderboard(data.leaderboard || []);
                 setIsLocked(data.isLocked || false);
                 setError(null);
@@ -27,6 +27,6 @@ export function useLeaderboard(eventSlug) {
         // Poll every 5 seconds
         const interval = setInterval(fetchLeaderboard, 5000);
         return () => clearInterval(interval);
-    }, [eventSlug]);
+    }, [eventSlug, category]);
     return { leaderboard, isLocked, loading, error };
 }

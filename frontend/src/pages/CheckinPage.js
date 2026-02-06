@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { apiClient } from '../services/api';
-import { setRefCode, setSessionToken } from '../services/supabase';
+import { setRefCode, setSessionToken, setAttendeeInfo } from '../services/supabase';
 export default function CheckinPage() {
     const { eventSlug } = useParams();
     const navigate = useNavigate();
@@ -29,8 +29,14 @@ export default function CheckinPage() {
             // Store session
             setRefCode(response.refCode);
             setSessionToken(response.sessionToken);
-            // Navigate to pass page
-            navigate(`/e/${eventSlug}/me`);
+            setAttendeeInfo({
+                name: response.name,
+                email: email || null,
+                role: role || null,
+                attendeeId: response.attendeeId
+            });
+            // Navigate to log conversation page
+            navigate(`/e/${eventSlug}/log`);
         }
         catch (err) {
             setError(err instanceof Error ? err.message : 'Check-in failed');

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { supabase } from '../index'
 import { LogConversationRequest, LogConversationResponse } from '../types'
 import { detectSpamIndicators, shouldExcludeFromScoring } from '../services/antiCheat'
+import { scoreConversation } from '../services/aiScoring'
 
 const router = Router()
 
@@ -73,6 +74,9 @@ router.post('/', async (req: Request, res: Response) => {
 
     const isSpam = shouldExcludeFromScoring(spamIndicators)
 
+    // Score conversation with AI
+    const aiScores = await scoreConversation(topics, note)
+
     // Create log
     const logId = uuidv4()
     const { error: insertError } = await supabase
@@ -86,6 +90,11 @@ router.post('/', async (req: Request, res: Response) => {
         topics: Array.isArray(topics) ? topics : [],
         note: note || null,
         round_label: roundLabel || null,
+        ai_score_overall: aiScores.overall,
+        ai_score_relevance: aiScores.relevance,
+        ai_score_weird: aiScores.weird,
+        ai_score_offtrack: aiScores.offtrack,
+        ai_analysis: aiScores.analysis,
         created_at: new Date().toISOString(),
         is_deleted: false,
       })
