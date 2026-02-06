@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { supabase } from '../index'
-import { LeaderboardResponse, LeaderboardEntry, AttendeeScore } from '../types'
+import { LeaderboardResponse, LeaderboardEntry, AttendeeScore, ConversationDetail } from '../types'
 import { calculateAttendeeScore, compareTiebreaker, generateLeaderboard } from '../services/scoring'
 
 const router = Router()
@@ -87,9 +87,12 @@ router.get('/', async (req: Request, res: Response) => {
 
       // Calculate category-specific score
       let categoryScore = 0
+      let hasCategoryLogs = false
+      
       if (selectedCategory === 'overall') {
         // Traditional leaderboard: connections + detail bonus
         categoryScore = calculateAttendeeScore(uniquePartners, detailBonusCount)
+        hasCategoryLogs = true // Everyone appears in overall
       } else if (selectedCategory === 'quality') {
         // Average of overall AI scores
         const aiScores = userLogs
@@ -98,30 +101,34 @@ router.get('/', async (req: Request, res: Response) => {
         categoryScore = aiScores.length > 0
           ? Math.round(aiScores.reduce((sum, s) => sum + s, 0) / aiScores.length)
           : 0
+        hasCategoryLogs = aiScores.length > 0
       } else if (selectedCategory === 'relevance') {
-        // Average relevance score
+        // EXCLUSIVE: Only logs where category IS 'relevance'
         const relevanceScores = userLogs
-          .filter(log => log.ai_score_relevance > 0)
+          .filter(log => log.ai_category === 'relevance' && log.ai_score_relevance > 0)
           .map(log => log.ai_score_relevance)
         categoryScore = relevanceScores.length > 0
           ? Math.round(relevanceScores.reduce((sum, s) => sum + s, 0) / relevanceScores.length)
           : 0
+        hasCategoryLogs = relevanceScores.length > 0
       } else if (selectedCategory === 'weird') {
-        // Average weird score
+        // EXCLUSIVE: Only logs where category IS 'weird'
         const weirdScores = userLogs
-          .filter(log => log.ai_score_weird > 0)
+          .filter(log => log.ai_category === 'weird' && log.ai_score_weird > 0)
           .map(log => log.ai_score_weird)
         categoryScore = weirdScores.length > 0
           ? Math.round(weirdScores.reduce((sum, s) => sum + s, 0) / weirdScores.length)
           : 0
+        hasCategoryLogs = weirdScores.length > 0
       } else if (selectedCategory === 'offtrack') {
-        // Average offtrack score
+        // EXCLUSIVE: Only logs where category IS 'offtrack'
         const offtrackScores = userLogs
-          .filter(log => log.ai_score_offtrack > 0)
+          .filter(log => log.ai_category === 'offtrack' && log.ai_score_offtrack > 0)
           .map(log => log.ai_score_offtrack)
         categoryScore = offtrackScores.length > 0
           ? Math.round(offtrackScores.reduce((sum, s) => sum + s, 0) / offtrackScores.length)
           : 0
+        hasCategoryLogs = offtrackScores.length > 0
       }
 
       const lastLogTime = userLogs.length > 0 ? userLogs[userLogs.length - 1].created_at : new Date().toISOString()
@@ -135,14 +142,64 @@ router.get('/', async (req: Request, res: Response) => {
         detailBonusCount,
         score: categoryScore,
         lastLogTime,
+        hasCategoryLogs, // Track if they belong to this category
       }
     })
 
+    // EXCLUSIVE FILTERING: Remove people who don't belong to this category
+    const filteredScores = selectedCategory === 'overall' 
+      ? scores // Overall shows everyone
+      : scores.filter(s => s.hasCategoryLogs) // Category-specific: only show people with logs in that category
+
     // Sort with tie-breaker
-    scores.sort(compareTiebreaker)
+    filteredScores.sort(compareTiebreaker)
 
     // Generate leaderboard
-    const leaderboard = generateLeaderboard(scores).slice(0, Number(limit) || 10)
+    const leaderboard: LeaderboardEntry[] = generateLeaderboard(filteredScores).slice(0, Number(limit) || 10)
+
+    // Add conversation details for top 3
+    for (let i = 0; i < Math.min(3, leaderboard.length); i++) {
+      const entry = leaderboard[i]
+      const attendeeId = filteredScores.find(s => s.refCode === entry.refCode)?.attendeeId
+      
+      if (attendeeId) {
+        // Get all logs for this attendee
+        const attendeeLogs = (logs || []).filter(log => log.from_attendee_id === attendeeId)
+        
+        // Filter by category if not overall
+        let relevantLogs = attendeeLogs
+        if (selectedCategory === 'relevance') {
+          relevantLogs = attendeeLogs.filter(log => log.ai_category === 'relevance')
+        } else if (selectedCategory === 'weird') {
+          relevantLogs = attendeeLogs.filter(log => log.ai_category === 'weird')
+        } else if (selectedCategory === 'offtrack') {
+          relevantLogs = attendeeLogs.filter(log => log.ai_category === 'offtrack')
+        }
+        
+        // Get partner names
+        const conversationDetails: ConversationDetail[] = await Promise.all(
+          relevantLogs.map(async (log) => {
+            let partnerName: string | undefined
+            
+            // Try to get partner name from attendees
+            if (log.to_attendee_id) {
+              const partner = attendees?.find(a => a.id === log.to_attendee_id)
+              partnerName = partner?.name
+            }
+            
+            return {
+              partnerRefCode: log.to_ref_code,
+              partnerName,
+              topics: Array.isArray(log.topics) ? log.topics : (typeof log.topics === 'string' ? [log.topics] : []),
+              note: log.note,
+              timestamp: log.created_at
+            }
+          })
+        )
+        
+        entry.conversations = conversationDetails
+      }
+    }
 
     const response: LeaderboardResponse = {
       eventName: event.name,

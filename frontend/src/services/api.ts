@@ -25,9 +25,9 @@ export const apiClient = {
   },
 
   // Get leaderboard
-  async getLeaderboard(eventSlug: string): Promise<LeaderboardResponse> {
+  async getLeaderboard(eventSlug: string, category: string = 'overall'): Promise<LeaderboardResponse> {
     const response = await api.get('/api/leaderboard', {
-      params: { eventSlug }
+      params: { eventSlug, category }
     })
     return response.data
   },

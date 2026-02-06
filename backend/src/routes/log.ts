@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { supabase } from '../index'
 import { LogConversationRequest, LogConversationResponse } from '../types'
 import { detectSpamIndicators, shouldExcludeFromScoring } from '../services/antiCheat'
-import { scoreConversation } from '../services/aiScoring'
+import { scoreConversation } from '../services/aiScoringLocal'
 
 const router = Router()
 
@@ -94,6 +94,7 @@ router.post('/', async (req: Request, res: Response) => {
         ai_score_relevance: aiScores.relevance,
         ai_score_weird: aiScores.weird,
         ai_score_offtrack: aiScores.offtrack,
+        ai_category: aiScores.category,
         ai_analysis: aiScores.analysis,
         created_at: new Date().toISOString(),
         is_deleted: false,

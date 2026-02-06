@@ -54,6 +54,14 @@ export interface ConversationLog {
 }
 
 // ============ LEADERBOARD TYPES ============
+export interface ConversationDetail {
+  partnerRefCode: string;
+  partnerName?: string;
+  topics: string[];
+  note?: string;
+  timestamp: string;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   refCode: string;
@@ -62,6 +70,7 @@ export interface LeaderboardEntry {
   uniquePartners: number;
   detailBonus: number;
   logCount: number;
+  conversations?: ConversationDetail[]; // Only for top 3
 }
 
 export interface LeaderboardResponse {
