@@ -1,3 +1,4 @@
+// Main application component with routing configuration
 import { Routes, Route } from 'react-router-dom'
 import EventLanding from './pages/EventLanding'
 import CheckinPage from './pages/CheckinPage'
